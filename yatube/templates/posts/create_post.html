@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load user_filters %}
+
 {% block title %}
 <title>Создание поста</title>
 {% endblock %}
@@ -20,7 +21,14 @@
                                 Текст поста
                                 <span class="required text-danger">*</span>
                             </label>
-                            <textarea name="text" cols="40" rows="10" class="form-control" required id="id_text">{{ form.text.value|default_if_none:'' }}</textarea>
+                            {{ form.text|addclass:"form-control" }}
+                            {% if form.text.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.text.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                             <small id="id_text-help" class="form-text text-muted">
                                 Текст нового поста
                             </small>
@@ -29,7 +37,7 @@
                             <label for="id_group">
                                 Группа
                             </label>
-                             {{ form.group|addclass:"form-control" }}
+                            {{ form.group|addclass:"form-control" }}
                             <small id="id_group-help" class="form-text text-muted">
                                 Группа, к которой будет относиться пост
                             </small>
