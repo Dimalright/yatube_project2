@@ -5,7 +5,6 @@ from django.core.paginator import Paginator
 from .forms import PostForm
 
 
-@login_required
 def index(request):
     temp = 'posts/index.html'
     post_list = Post.objects.all().order_by('-pub_date')
@@ -18,7 +17,6 @@ def index(request):
     return render(request, temp, context)
 
 
-@login_required
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
     post_list = Post.objects.filter(group=group).order_by('-pub_date')
