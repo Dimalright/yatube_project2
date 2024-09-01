@@ -9,8 +9,8 @@
   <div class="container py-5">        
     <h1>Все посты пользователя {{ profile_user.username }}</h1>
     <h3>Всего постов: {{ page_obj.paginator.count }}</h3>   
+    {% for post in page_obj %}
     <article>
-        {% for post in page_obj %}
       <ul>
         <li>
           Автор:  {{ post.author.username }}
@@ -20,19 +20,24 @@
           Дата публикации: {{ post.pub_date|date:"d E Y" }} 
         </li>
       </ul>
+      {% if post.image %}
+        <div class="mb-3">
+          <img src="{{ post.image.url }}" alt="Post Image" class="img-fluid" style="max-height: 400px; object-fit: cover;">
+        </div>
+      {% endif %}
       <p>
         {{ post.text|truncatewords:30 }}    
       </p>
       <a href="{% url 'posts:post_detail' post.id %}">подробная информация</a>
 
+      {% if post.group %}
+        <li>
+          <a href="{% url 'posts:group_list' post.group.slug %}">Все записи группы {{ post.group.slug }}</a>
+        </li>
+      {% endif %}
     </article>       
-        {% if post.group %}
-    <li>
-    <a href="{% url 'posts:group_list' post.group.slug %}">Все записи группы {{ post.group.slug }}</a>
-    </li>
-        {% endif %}
     {% if not forloop.last %}
-    <hr>
+      <hr>
     {% endif %}
     {% endfor %}
     <hr>

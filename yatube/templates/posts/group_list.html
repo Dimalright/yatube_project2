@@ -18,6 +18,11 @@
                     Дата публикации: {{ post.pub_date|date:"d E Y" }}
                 </li>
             </ul>
+            {% if post.image %}
+                <div class="mb-3">
+                    <img src="{{ post.image.url }}" alt="Post Image" class="img-fluid" style="max-height: 400px; object-fit: cover;">
+                </div>
+            {% endif %}
             <p>{{ post.text }}</p>
         </article>
         {% if post.group %}

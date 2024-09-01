@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load user_filters %}
+
 {% block title %}
 <title>{% if is_edit %}Редактирование поста{% else %}Создание поста{% endif %}</title>
 {% endblock %}
@@ -13,7 +14,7 @@
                     {% if is_edit %}Редактировать пост{% else %}Новый пост{% endif %}
                 </div>
                 <div class="card-body">
-                    <form method="post" action="{% if is_edit %}{% url 'posts:post_edit' post.id %}{% else %}{% url 'posts:post_create' %}{% endif %}">
+                    <form method="post" enctype="multipart/form-data" action="{% if is_edit %}{% url 'posts:post_edit' post.id %}{% else %}{% url 'posts:post_create' %}{% endif %}">
                         {% csrf_token %}
                         <div class="form-group row my-3 p-3">
                             <label for="id_text">
@@ -32,6 +33,20 @@
                             {{ form.group|addclass:"form-control" }}
                             <small id="id_group-help" class="form-text text-muted">
                                 Группа, к которой будет относиться пост
+                            </small>
+                        </div>
+                        <div class="form-group row my-3 p-3">
+                            <label for="id_image">
+                                Картинка
+                            </label>
+                            {{ form.image|addclass:"form-control" }}
+                            {% if form.instance.image %}
+                                <div class="mt-2">
+                                    <img src="{{ form.instance.image.url }}" alt="Post Image" class="img-fluid" style="max-height: 200px; object-fit: cover;">
+                                </div>
+                            {% endif %}
+                            <small id="id_image-help" class="form-text text-muted">
+                                Загрузите изображение для поста
                             </small>
                         </div>
                         <div class="d-flex justify-content-end">

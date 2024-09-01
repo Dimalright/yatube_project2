@@ -2,7 +2,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from posts.models import Post, Group, User
 from django import forms
-
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 class PostContextTests(TestCase):
     @classmethod
@@ -19,12 +19,25 @@ class PostContextTests(TestCase):
             slug='other-slug',
             description='Other description'
         )
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x01\x00'
+            b'\x01\x00\x00\x00\x00\x21\xf9\x04'
+            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
+            b'\x00\x00\x01\x00\x01\x00\x00\x02'
+            b'\x02\x4c\x01\x00\x3b'
+        )
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
         # Создаем 13 постов, чтобы проверить пагинацию
         cls.posts = [
             Post.objects.create(
                 text=f'Test post {i}',
                 author=cls.user,
-                group=cls.group
+                group=cls.group,
+                image=uploaded if i == 0 else None
             ) for i in range(13)
         ]
 
@@ -32,7 +45,8 @@ class PostContextTests(TestCase):
         cls.new_post = Post.objects.create(
             text='New Test Post',
             author=cls.user,
-            group=cls.group
+            group=cls.group,
+            image=uploaded
         )
 
     def setUp(self):
@@ -47,6 +61,9 @@ class PostContextTests(TestCase):
         self.assertIn('page_obj', response.context)
         # Проверяем, что на первой странице 10 постов
         self.assertEqual(len(response.context['page_obj']), 10)
+        # Проверяем, что картинка передалась в пост
+        first_post = response.context['page_obj'][0]
+        self.assertTrue(first_post.image, 'Изображение отсутствует в посте')
         # Проверяем, что на второй странице 3 поста
         response = self.authorized_client.get(reverse('posts:index') + '?page=2')
         self.assertEqual(len(response.context['page_obj']), 4)
@@ -61,6 +78,9 @@ class PostContextTests(TestCase):
         self.assertEqual(group.slug, self.group.slug)
         # Проверяем, что на первой странице 10 постов
         self.assertEqual(len(response.context['page_obj']), 10)
+        # Проверяем, что картинка передалась в пост
+        first_post = response.context['page_obj'][0]
+        self.assertTrue(first_post.image, 'Изображение отсутствует в посте')
         # Проверяем, что на второй странице 3 поста
         response = self.authorized_client.get(reverse('posts:group_list', kwargs={'slug': self.group.slug}) + '?page=2')
         self.assertEqual(len(response.context['page_obj']), 4)
@@ -74,6 +94,9 @@ class PostContextTests(TestCase):
         self.assertEqual(profile_user.username, self.user.username)
         # Проверяем, что на первой странице 10 постов
         self.assertEqual(len(response.context['page_obj']), 10)
+        # Проверяем, что картинка передалась в пост
+        first_post = response.context['page_obj'][0]
+        self.assertTrue(first_post.image, 'Изображение отсутствует в посте')
         # Проверяем, что на второй странице 3 поста
         response = self.authorized_client.get(reverse('posts:profile', kwargs={'username': self.user.username}) + '?page=2')
         self.assertEqual(len(response.context['page_obj']), 4)
@@ -86,6 +109,7 @@ class PostContextTests(TestCase):
         self.assertEqual(post.text, 'Test post 0')
         self.assertEqual(post.author, self.user)
         self.assertEqual(post.group, self.group)
+        self.assertTrue(post.image, 'Не содержит картинки')
 
     def test_post_create_page_context(self):
         """Проверка контекста страницы создания поста."""

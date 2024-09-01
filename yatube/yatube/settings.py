@@ -31,7 +31,6 @@ ALLOWED_HOSTS = [
     '[::1]',
     'testserver',
 ]
- 
 
 
 # Application definition
@@ -47,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'users.apps.UsersConfig',
     'about.apps.AboutConfig',
+    'sorl.thumbnail',
 ]
 
 MIDDLEWARE = [
@@ -139,3 +139,6 @@ LOGOUT_REDIRECT_URL = 'posts:index'
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = 'email/email/'  # Задайте путь к каталогу, где будут храниться email-сообщения
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
