@@ -1,8 +1,9 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from posts.models import Post, Group, User
+from posts.models import Post, Group, User, Comment
 from django import forms
 from django.core.files.uploadedfile import SimpleUploadedFile
+
 
 class PostContextTests(TestCase):
     @classmethod
@@ -40,7 +41,6 @@ class PostContextTests(TestCase):
                 image=uploaded if i == 0 else None
             ) for i in range(13)
         ]
-
         # Создаем новый пост для проверки в разных местах
         cls.new_post = Post.objects.create(
             text='New Test Post',
@@ -48,12 +48,19 @@ class PostContextTests(TestCase):
             group=cls.group,
             image=uploaded
         )
+        cls.posts.append(cls.new_post)
+        cls.comment = Comment.objects.create(
+            post=cls.new_post,
+            author=cls.user,
+            text='test comment'
+        )
 
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
         self.post = self.posts[0]
+        self.post_with_comment = self.posts[13]
 
     def test_index_page_context_and_pagination(self):
         """Проверка контекста и пагинации главной страницы."""
@@ -97,7 +104,7 @@ class PostContextTests(TestCase):
         # Проверяем, что картинка передалась в пост
         first_post = response.context['page_obj'][0]
         self.assertTrue(first_post.image, 'Изображение отсутствует в посте')
-        # Проверяем, что на второй странице 3 поста
+        # Проверяем, что на второй странице 4 поста
         response = self.authorized_client.get(reverse('posts:profile', kwargs={'username': self.user.username}) + '?page=2')
         self.assertEqual(len(response.context['page_obj']), 4)
 
@@ -146,3 +153,19 @@ class PostContextTests(TestCase):
         """Проверка, что новый пост не появляется на странице другой группы."""
         response = self.authorized_client.get(reverse('posts:group_list', kwargs={'slug': self.other_group.slug}))
         self.assertNotIn(self.new_post, response.context['page_obj'].object_list)
+
+    def test_post_comment_vision_in_post_detail(self):
+        """Проверка, что комментарий появляется на странице поста"""
+        response = self.authorized_client.get(reverse('posts:post_detail', kwargs={'post_id': self.post_with_comment.pk}))
+        comments = response.context['comments']
+        self.assertIn(self.comment, comments)
+
+    def test_post_comment_only_authorized_user(self):
+        """Проверям что только авторизованный юзер может комментить"""
+        response = self.guest_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.new_post.pk}),
+            {'text': 'blablabla'},
+            follow=True
+        )
+        self.assertRedirects(response, f'/auth/login/?next=/posts/{self.new_post.pk}/comment/')
+        self.assertFalse(Comment.objects.filter(text='blablabla').exists())

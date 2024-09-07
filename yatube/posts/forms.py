@@ -1,5 +1,5 @@
 from django import forms
-from .models import Post
+from .models import Post, Comment
 
 
 class PostForm(forms.ModelForm):
@@ -12,3 +12,9 @@ class PostForm(forms.ModelForm):
         if not text.strip():
             raise forms.ValidationError('Поле не может быть пустым или содержать только пробелы.')
         return text
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ('text',)

@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Post, Group, User
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from .forms import PostForm
+from .forms import PostForm, CommentForm
 
 
 def index(request):
@@ -46,9 +46,15 @@ def profile(request, username):
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
+    author = get_object_or_404(User, username=post.author)
+    form = CommentForm(request.POST or None)
+    comments = post.comments.all()
     # Здесь код запроса к модели и создание словаря контекста
     context = {
         'post': post,
+        'author': author,
+        'form': form,
+        'comments': comments,
     }
     return render(request, 'posts/post_detail.html', context)
 
@@ -93,3 +99,16 @@ def post_edit(request, post_id):
                  request, 'posts/update_post.html',
                  {'form': form, 'post': post, 'is_edit': True}
     )
+
+
+@login_required
+def add_comment(request, post_id):
+    # Получите пост и сохраните его в переменную post.
+    post = get_object_or_404(Post, pk=post_id)
+    form = CommentForm(request.POST or None)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = post
+        comment.save()
+    return redirect('posts:post_detail', post_id=post_id)
