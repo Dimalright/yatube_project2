@@ -3,6 +3,9 @@ from django.urls import reverse
 from posts.models import Post, Group, User, Comment
 from django import forms
 from django.core.files.uploadedfile import SimpleUploadedFile
+from datetime import time
+from django.core.cache import cache
+import time
 
 
 class PostContextTests(TestCase):
@@ -61,6 +64,7 @@ class PostContextTests(TestCase):
         self.authorized_client.force_login(self.user)
         self.post = self.posts[0]
         self.post_with_comment = self.posts[13]
+        cache.clear()
 
     def test_index_page_context_and_pagination(self):
         """Проверка контекста и пагинации главной страницы."""
@@ -169,3 +173,16 @@ class PostContextTests(TestCase):
         )
         self.assertRedirects(response, f'/auth/login/?next=/posts/{self.new_post.pk}/comment/')
         self.assertFalse(Comment.objects.filter(text='blablabla').exists())
+
+    def test_cache_work_in_index_page(self):
+        """Проверям корректную работу кэща index_page"""
+        response = self.authorized_client.get(reverse('posts:index'))
+        content_before = response.content
+        Post.objects.create(text='blasdad', author=self.user, group=self.group)
+        response = self.authorized_client.get(reverse('posts:index'))
+        content_after = response.content
+        self.assertEqual(content_before, content_after)
+        time.sleep(20)
+        response = self.authorized_client.get(reverse('posts:index'))
+        content_update = response.content
+        self.assertNotEqual(content_before, content_update)
