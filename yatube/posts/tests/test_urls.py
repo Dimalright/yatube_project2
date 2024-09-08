@@ -69,3 +69,8 @@ class PostsURLTests(TestCase):
         """Страницы недоступные для неавторизованных пользователей перенаправляют пользователя на страницу логина."""
         response = self.guest_client.get('/create/')
         self.assertRedirects(response, '/auth/login/?next=/create/')
+
+    def test_user_core404_template(self):
+        """Вызов кастомного шаблона"""
+        response = self.guest_client.get('/sdasd/')
+        self.assertTemplateUsed(response, 'core/404.html')

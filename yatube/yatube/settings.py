@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'q44s3svk%+$g(n*5djw9j1ad8@7!w1s3jis=6sby9^x77lnqf*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -142,3 +142,5 @@ EMAIL_FILE_PATH = 'email/email/'  # Задайте путь к каталогу,
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+CSRF_FAILURE_VIEW = 'core.views.permission_denied_view'
