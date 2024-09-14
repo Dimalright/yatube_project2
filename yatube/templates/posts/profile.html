@@ -6,10 +6,27 @@
 
 {% block content %}
 <main>
-  <div class="container py-5">        
+  <div class="mb-5">     
     <h1>Все посты пользователя {{ profile_user.username }}</h1>
-    <h3>Всего постов: {{ page_obj.paginator.count }}</h3>   
-    {% for post in page_obj %}
+    <h3>Всего постов: {{ page_obj.paginator.count }}</h3>
+    {% if following %}
+    <a
+      class="btn btn-lg btn-light"
+      href="{% url 'posts:profile_unfollow' profile_user.username %}" role="button"
+    >
+      Отписаться
+    </a>
+    {% else %}
+    <a
+      class="btn btn-lg btn-primary"
+      href="{% url 'posts:profile_follow' profile_user.username %}" role="button"
+    >
+      Подписаться
+    </a>
+    {% endif %}
+  </div>
+ 
+  {% for post in page_obj %}
     <article>
       <ul>
         <li>
@@ -31,17 +48,16 @@
       <a href="{% url 'posts:post_detail' post.id %}">подробная информация</a>
 
       {% if post.group %}
-        <li>
-          <a href="{% url 'posts:group_list' post.group.slug %}">Все записи группы {{ post.group.slug }}</a>
-        </li>
+      <li>
+        <a href="{% url 'posts:group_list' post.group.slug %}">Все записи группы {{ post.group.slug }}</a>
+      </li>
       {% endif %}
     </article>       
     {% if not forloop.last %}
       <hr>
     {% endif %}
-    {% endfor %}
-    <hr>
-    {% include 'posts/includes/paginator.html' %}
-  </div>
+  {% endfor %}
+  <hr>
+  {% include 'posts/includes/paginator.html' %}
 </main>
 {% endblock %}

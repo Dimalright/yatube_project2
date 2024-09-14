@@ -1,6 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from posts.models import Post, Group, User, Comment
+from posts.models import Post, Group, User, Comment, Follow
 from django import forms
 from django.core.files.uploadedfile import SimpleUploadedFile
 from datetime import time
@@ -13,6 +13,8 @@ class PostContextTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
+        cls.follower_user = User.objects.create_user(username='follower')
+        cls.non_follower_user = User.objects.create_user(username='non_follower')
         cls.group = Group.objects.create(
             title='Test Group',
             slug='test-slug',
@@ -57,11 +59,18 @@ class PostContextTests(TestCase):
             author=cls.user,
             text='test comment'
         )
+        Follow.objects.create(
+            user=cls.follower_user,
+            author=cls.user)
 
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client = Client()
+        self.authorized_follower_client = Client()
+        self.authorized_non_follower_client = Client()
         self.authorized_client.force_login(self.user)
+        self.authorized_follower_client.force_login(self.follower_user)
+        self.authorized_non_follower_client.force_login(self.non_follower_user)
         self.post = self.posts[0]
         self.post_with_comment = self.posts[13]
         cache.clear()
@@ -186,3 +195,22 @@ class PostContextTests(TestCase):
         response = self.authorized_client.get(reverse('posts:index'))
         content_update = response.content
         self.assertNotEqual(content_before, content_update)
+
+    def test_auhh_user_can_follow_unfollow(self):
+        """Проверка авториз. польз. можете подписываться и отписываться"""
+        another_user = User.objects.create_user(username='another_user')
+        response_follow = self.authorized_client.get(reverse('posts:profile_follow', kwargs={'username': another_user.username}))
+        self.assertEqual(response_follow.status_code, 302)
+        self.assertTrue(self.user.follower.exists())
+        response_unfollow = self.authorized_client.get(reverse('posts:profile_unfollow', kwargs={'username': another_user.username}))
+        self.assertEqual(response_unfollow.status_code, 302)
+        self.assertFalse(self.user.follower.exists())
+
+    def test_follow_index_page_context(self):
+        """Проверка контекста страницы подписок."""
+        response = self.authorized_follower_client.get(reverse('posts:follow_index'))
+        self.assertIn('posts', response.context)
+        self.assertIn(self.new_post, response.context['posts'])
+        # Проверяем, что посты от неподписанных пользователей не отображаются
+        response_non_follower = self.authorized_non_follower_client.get(reverse('posts:follow_index'))
+        self.assertNotIn(self.new_post, response_non_follower.context['posts'])
